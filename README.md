@@ -1,17 +1,26 @@
 # VoxNote (TRON-MeetingAI)
 > **100% 離線運行的 AI 專業會議助手**
 
-VoxNote 是一個為商務與技術開發人員打造的離線 AI 工具，它能錄製、轉錄、並自動校對與摘要您的會議。所有運算皆在您的本地顯卡上完成，確保隱私安全。
+VoxNote 是一個為商務與技術開發人員打造的離線 AI 工具，它能錄製、轉錄、並自動校對與產生「具備戰略深度」的會議摘要。所有運算皆在您的本地顯卡上完成，確保數據絕不外流。
+
+![Architecture](architecture-PRD.png)
+
+---
+
+## ✨ 核心特色 (v1.0.0)
+- **極致準確性**: 結合 Faster-Whisper 與 AI 語義校對，自動修正技術名詞與繁體術語。
+- **戰略深度摘要**: 捨棄零散條列，提供最少 400 字的核心討論脈絡分析與戰略洞察。
+- **隱私至上**: 無須網路連接，AI 核心、資料庫與音訊檔案完全保存在您的硬碟中。
+- **專業 PDF 匯出**: 一鍵產生排版精美的「專家分析報告」，且預設儲存於您的專案目錄。
 
 ---
 
 ## 🛠️ 系統環境要求 (重要)
-在使用前，請確保您的開發環境符合以下規格，以獲得最佳性能：
+在使用前，請確保您的設備符合以下規格：
 - **作業系統**: Windows 11 (64-bit)
-- **顯示卡**: NVIDIA GPU (建議 8GB+ VRAM，如 RTX 30/40 系列)
-- **驅動程式**: **CUDA 12.4** (必需)
-- **編譯工具**: Visual Studio 2026 (或 Build Tools) + C++ 開發組件
-- **開發路徑**: 建議將專案放在非中文、無空格的路徑 (如 `D:\Python\VoxNote`)
+- **顯示卡**: NVIDIA GPU (強烈建議 **8GB+ VRAM**, 如 RTX 3060/4060 Ti 以上)
+- **軟體環境**: CUDA 12.4 + Python 3.13 + Visual Studio 2026 Build Tools
+- **磁碟空間**: 建議預留 20GB 以上（供模型與編譯暫存使用）
 
 ---
 
@@ -27,32 +36,21 @@ pip install -r sidecar/requirements.txt
 ### 2. 初始化前端與資料庫
 ```cmd
 npm install
-# [關鍵] 同步資料庫結構
 npx prisma db push
 ```
 
-### 3. 下載 AI 模型 (核心步驟)
-請下載以下模型並依照建議路徑存放，詳見下方 [AI 模型下載與配置](#-ai-模型下載與配置) 區塊。
+### 3. 下載 AI 模型
+請下載以下模型並放入 `models/` 資料夾（詳見 [AI 模型下載與配置](#-ai-模型下載與配置)）：
+- `Systran/faster-whisper-large-v3-turbo`
+- `Llama-3-Taiwan-8B-Instruct-v1-GGUF`
 
 ### 4. 設定環境變數
-複製 `.env.example` 為 `.env` 並填入您的設定。
+複製 `.env.example` 為 `.env` 並填入您的設定（特別是 `HF_TOKEN`）。
 
 ### 5. 啟動應用程式
 ```cmd
 npm run dev
 ```
-
----
-
-## 🛠️ 開發者工具箱 (Developer Toolbox)
-專案根目錄提供了一系列自動化腳本，用於解決 Windows 環境下的硬體相容性與編譯難題：
-
-| 腳本名稱 | 執行時機 | 核心功能 |
-| :--- | :--- | :--- |
-| **`REPAIR_GPU.bat`** | GPU 報錯、顯存未釋放時 | 一鍵清理殘留進程、重設 CUDA 環境變數並驗證顯存狀態。 |
-| **`DEVELOPER_SHORT_PATH_BUILD.bat`** | 打包時噴出「路徑過長」錯誤時 | 自動建立 `D:\vnb` 短路徑作為臨時編譯目錄，繞過 Windows 260 字元限制。 |
-| **`DEVELOPER_GPU_BUILD.bat`** | 需要重新封裝 Sidecar 引擎時 | 自動配置 `-allow-unsupported-compiler` 旗標，強制 CUDA 12.4 與 VS 2026 協作。 |
-| **`DEVELOPER_ULTIMATE_BUILD.bat`** | 準備發布正式安裝版本時 | **全自動流程**：Prisma 生成 -> Sidecar GPU 打包 -> Electron 封裝。 |
 
 ---
 
@@ -74,26 +72,35 @@ npm run dev
 
 ---
 
-## 🏆 驗證過最佳性能組合 (Golden Setup)
-針對 **RTX 4070 (8GB VRAM)** 環境，我們建議以下配置以達成 100% GPU 加速且不崩潰：
+## ❓ 常見問題 (FAQ)
 
-| 組件 | 推薦模型/版本 | 設定參數 | 預期效能 |
-| :--- | :--- | :--- | :--- |
-| **STT (轉錄)** | `large-v3-turbo` | `device="cuda"`, `compute_type="float16"` | 1小時會議約 2-3 分鐘完成 |
-| **邏輯引擎** | `Qwen-2.5-7B` | `n_gpu_layers=-1` (完全載入 VRAM) | 事實提取極快，不失真 |
-| **潤飾引擎** | `Llama-3-Taiwan-8B`| `n_gpu_layers=-1` (完全載入 VRAM) | 完美繁體中文商務語氣 |
-| **發言人識別**| `pyannote-3.1` | `HF_TOKEN` (必需) | 準確率 > 95% |
+#### Q: 只有 6GB 顯存 (VRAM) 的顯卡可以執行嗎？
+A: 可以，但建議在「設定」中將 LLM 顯存層數 (n_gpu_layers) 適度調低（例如 20-30 層），或使用更輕量化的模型版本 (如 Q4_K_S)。
 
----
+#### Q: 為什麼 PDF 匯出路徑與我想的不一樣？
+A: v1.0.0 已優化：匯出預設會開啟您在 Settings 中設定的 **Storage Path**。若未設定，則預設回退至桌面。
 
-## 🛡️ 安全與穩性加固
-- **短路徑編譯**: 使用 `D:\vnb` 作為 `TMP` 目錄，繞過 Windows 260 字元路徑限制。
-- **依賴加固**: 使用 `pyannote-audio==3.1.1` 配合 `Torch 2.6.0+cu124` 確保 CUDA 穩定性。
-- **進程監控**: Sidecar 自動偵測 OOM (顯存溢出) 並嘗試優雅重啟，不影響 Electron 主進程。
+#### Q: 我可以增加自定義的專業術語嗎？
+A: 可以！在「設定」頁面的「自定義術語」中填入關鍵字（如公司產品名、內部代號），AI 會在轉錄與校對時優先識別。
+
+#### Q: Sidecar 狀態顯示紅色 "OFFLINE" 怎麼辦？
+A: 請確認 8000 埠號未被佔用，或嘗試執行根目錄的 `REPAIR_GPU.bat` 清理殘留進程。
 
 ---
 
-## 🛡️ 隱私承諾
-- **無網路連接**: AI 核心與資料庫完全離線運作。
-- **憑證加密**: HuggingFace Token 使用 `safeStorage` 進行系統級加密。
-- **資料儲存**: 所有會議記錄儲存於您自定義的 `Storage Path`，預設為 `AppData`。
+## 🛠️ 開發者工具箱
+| 腳本名稱 | 核心功能 |
+| :--- | :--- |
+| **`REPAIR_GPU.bat`** | 一鍵清理殘留進程、重設 CUDA 環境變數。 |
+| **`DEVELOPER_SHORT_PATH_BUILD.bat`** | 繞過 Windows 260 字元路徑限制進行編譯。 |
+| **`DEVELOPER_ULTIMATE_BUILD.bat`** | **自動發佈流程**：Prisma 生成 -> Sidecar 打包 -> Electron 封裝。 |
+
+---
+
+## 🛡️ 隱私與安全
+- **100% 離線**: 核心邏輯完全不依賴外部 API。
+- **憑證安全**: HuggingFace Token 使用 `safeStorage` 系統級加密儲存。
+- **授權協定**: MIT License.
+
+---
+Copyright (c) 2026 Yunotang (ashtontron). All rights reserved.
