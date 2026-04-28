@@ -1,6 +1,6 @@
 import { ipcMain, app, dialog, BrowserWindow, safeStorage } from 'electron'
 import { writeFile, readFile, mkdir, copyFile, unlink } from 'fs/promises'
-import { join, resolve, normalize } from 'path'
+import { join, resolve, normalize, basename } from 'path'
 import { PrismaClient } from '@prisma/client'
 import { existsSync, mkdirSync, readFileSync, writeFileSync, copyFileSync, statSync, appendFileSync } from 'fs'
 import { is } from '@electron-toolkit/utils'
@@ -351,6 +351,9 @@ export function setupIpcHandlers() {
 
       if (!filePath) return { success: false, error: 'User canceled' }
 
+      // 🟢 [Fix] 讓 PDF 內部標題與實際儲存的檔名連動
+      const actualFileName = basename(filePath, '.pdf')
+
       const win = new BrowserWindow({ show: false })
       let html = ''
 
@@ -417,8 +420,19 @@ export function setupIpcHandlers() {
         `
       }
 
-      await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent('<html><head><meta charset="UTF-8"></head><body>'+html+'</body></html>')}`)
-      const pdfData = await win.webContents.printToPDF({ printBackground: true })
+      await win.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent('<html><head><meta charset="UTF-8"><title>'+actualFileName+'</title></head><body>'+html+'</body></html>')}`)
+      
+      // 🟢 [Fix] 關閉頁首頁尾顯示，防止出現 data:text/html 字串
+      const pdfData = await win.webContents.printToPDF({ 
+        printBackground: true,
+        displayHeaderFooter: false,
+        margins: {
+          top: 0,
+          bottom: 0,
+          left: 0,
+          right: 0
+        }
+      })
       await writeFile(filePath, pdfData)
       win.close()
       return { success: true, path: filePath }
@@ -428,45 +442,7 @@ export function setupIpcHandlers() {
   })
 
   // --- Action Items Handlers ---
-  ipcMain.handle('get-all-action-items', async () => {
-    return prisma.actionItem.findMany({
-      include: { meeting: { select: { title: true, date: true } } },
-      orderBy: { createdAt: 'desc' }
-    })
-  })
-
-  ipcMain.handle('toggle-action-status', async (_, { actionId, status }) => {
-    try {
-      await prisma.actionItem.update({
-        where: { id: actionId },
-        data: { status }
-      })
-      return { success: true }
-    } catch (err: any) {
-      return { success: false, error: err.message }
-    }
-  })
-
-  ipcMain.handle('update-action-priority', async (_, { actionId, priority }) => {
-    try {
-      await prisma.actionItem.update({
-        where: { id: actionId },
-        data: { priority }
-      })
-      return { success: true }
-    } catch (err: any) {
-      return { success: false, error: err.message }
-    }
-  })
-
-  ipcMain.handle('delete-action-item', async (_, id) => {
-    try {
-      await prisma.actionItem.delete({ where: { id } })
-      return { success: true }
-    } catch (err: any) {
-      return { success: false, error: err.message }
-    }
-  })
+  // 已根據戰略調整移除獨立管理功能，任務併入摘要報告。
 
   ipcMain.handle('get-meeting-details', async (_, id) => prisma.meeting.findUnique({ where: { id }, include: { segments: { include: { speaker: true } }, summary: true, actionItems: true } }))
   ipcMain.handle('delete-meeting', async (_, id) => { await prisma.meeting.delete({ where: { id } }); return { success: true } })

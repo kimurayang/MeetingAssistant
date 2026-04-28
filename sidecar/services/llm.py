@@ -87,13 +87,13 @@ class LLMService:
         if not items:
             return []
 
-        instruction = """你是資深逐字稿校對員。請只做「文字校正」，不可改變段落數量與順序。
+        instruction = """您是頂級技術逐字稿校對專家。請對輸入內容進行「台灣繁體中文」專業校正。
 規則：
-- 只修正錯字、繁體用字、技術名詞（CUDA/VRAM/API/CLI/NPM/PIP 等），移除明顯口頭贅字可，但不得刪除關鍵資訊。
-- 不得合併/拆分句子；不得新增不存在的內容。
-- 必須輸出與輸入等長的 JSON，並保留每筆的 i。
-- 若某筆內容無需修改，原樣輸出。
-輸出 JSON 格式：
+1. 準確性第一：修正同音異字、錯別字。特別是台灣常用術語（如：顯存->顯存/記憶體、內存->記憶體、代碼->程式碼）。
+2. 技術名詞加固：精確識別並修正 CUDA, VRAM, API, Python, Electron, Prisma 等技術詞彙大小寫。
+3. 1:1 無損限制：嚴禁合併、拆分、新增或刪除任何原意資訊。保留原始說話者的語氣，僅修正字面錯誤。
+4. 禁止總結：請勿總結內容，只需校對文字。
+輸出格式：必須輸出與輸入等長的 JSON。
 { "items": [ { "i": 0, "text": "..." }, ... ] }
 """
 
@@ -269,29 +269,26 @@ class LLMService:
         return corrected_segments, final_report
 
     def _final_structuring(self, facts: str, mode: str):
-        instruction = """您是頂級商務顧問與技術專家。請根據提供的事實點，撰寫一份「極詳盡、專業」的全方位會議報告。
-【語言要求】：必須使用「繁體中文」(Traditional Chinese)。
-【結構要求】：報告必須包含以下六個部分，並嚴格按順序產出：
-1. 會議核心討論 (key_content)：【重要！開場必填，最少 200 字】詳盡記錄技術討論脈絡、技術參數、各方立場、邏輯推論。
-2. 基本資料 (basic_info)
-3. 會議議程 (agenda)
-4. 決議紀錄 (decisions)
-5. 待辦事項 (action_items)
-6. 討論摘要 (discussion)
+        instruction = """您是具備深厚技術背景的商務策略顧問。請根據提供的事實點，撰寫一份「極具深度、邏輯清晰、可供決策使用」的技術會議深度報告。
 
-【重要目標】：這不是簡短摘要，而是一份供專業團隊執行使用的詳盡紀要。
-- 請擴充內容深度，詳細描述技術參數、風險評估。
-- 尤其是在 key_content 區塊，請保留完整的討論邏輯。
+【語言要求】：必須完全使用「台灣繁體中文」(Traditional Chinese)。
+【核心目標】：將零散的對話轉化為具備「戰略價值」的專業文檔。
+
+【報告結構與深度要求】：
+1. 深度討論分析 (key_content)：【核心區段，最少 400 字】
+   - 不可僅條列重點。請詳盡描述技術決策的脈絡、各方立場的辯證、技術參數的權衡、以及隱含的風險評估。
+   - 確保讀者即使未參加會議，也能透過此段落完整理解技術細節與邏輯推論過程。
+2. 基本資料 (basic_info)：包含主題、與會者、時間。
+3. 會議議程 (agenda)：結構化條列討論進程。
+4. 最終決議與共識 (decisions)：精確描述會議達成的所有最終定案。
+5. 行動指南與後續計畫 (action_items)：
+   - 將原本的任務清單轉化為具備敘述性的「下一步計畫」。
+   - 包含負責人、目標、以及在何種條件下應觸發何種行動。
+6. 戰略性洞察 (strategic_insights)：分析本次會議對專案長遠發展的影響或潛在的技術債提醒。
 
 【硬性要求】：
-- 不可輸出空的 sections；若沒有明確內容，請輸出「未明確形成」並補上「最接近的共識/方向」與「TBD 待確認點」。
-- 請務必輸出「純 JSON」，不得包含任何解釋文字。
-
-【產出範例】：
-"key_content": [
-  "針對 A 技術路徑，工程師 John 提出質疑，認為 VRAM 佔用過高會導致 OOM，建議改用 Map-Reduce 方案。",
-  "團隊針對 B 問題進行激辯，最終共識為暫緩更新，直到 CUDA 驅動穩定為止。"
-]
+- ⚠️ 嚴禁輸出空的區段。若無內容，請輸出「根據目前資訊尚未形成明確決議，建議後續追蹤 A/B 方向」。
+- 僅輸出「純 JSON」，不得有任何前言或結尾解釋。
 """
 
         schema = {
@@ -309,30 +306,10 @@ class LLMService:
                 "agenda": {"type": "array", "items": {"type": "string"}},
                 "key_content": {"type": "array", "items": {"type": "string"}},
                 "decisions": {"type": "array", "items": {"type": "string"}},
-                "action_items": {
-                    "type": "array", 
-                    "items": {
-                        "type": "object",
-                        "properties": {
-                            "task": {"type": "string"},
-                            "owner": {"type": "string"},
-                            "due_date": {"type": "string"}
-                        },
-                        "required": ["task", "owner", "due_date"]
-                    }
-                },
-                "discussion": {
-                    "type": "object",
-                    "properties": {
-                        "tracking": {"type": "array", "items": {"type": "string"}},
-                        "interesting": {"type": "array", "items": {"type": "string"}},
-                        "retrospective": {"type": "array", "items": {"type": "string"}}
-                    },
-                    "required": ["tracking", "interesting", "retrospective"]
-                }
+                "action_items": {"type": "array", "items": {"type": "string"}},
+                "strategic_insights": {"type": "array", "items": {"type": "string"}}
             },
-            # ✅ key_content 不要 required，避免模型漏欄位就整體失敗
-            "required": ["basic_info", "agenda", "decisions", "action_items", "discussion"]
+            "required": ["basic_info", "agenda", "key_content", "decisions", "action_items", "strategic_insights"]
         }
 
         def _normalize(obj: dict) -> dict:
@@ -342,34 +319,15 @@ class LLMService:
             obj.setdefault("basic_info", {})
             if not isinstance(obj["basic_info"], dict):
                 obj["basic_info"] = {}
-            obj["basic_info"].setdefault("subject", "")
-            obj["basic_info"].setdefault("participants", "")
-            obj["basic_info"].setdefault("time", "")
+            obj["basic_info"].setdefault("subject", "未命名會議")
+            obj["basic_info"].setdefault("participants", "未指定")
+            obj["basic_info"].setdefault("time", "未指定")
 
             obj.setdefault("agenda", [])
             obj.setdefault("decisions", [])
             obj.setdefault("key_content", [])
-
-            # 🛡️ 將結構化 action_items 格式化為易讀字串
-            raw_actions = obj.get("action_items", [])
-            formatted_actions = []
-            if isinstance(raw_actions, list):
-                for act in raw_actions:
-                    if isinstance(act, dict):
-                        task = act.get("task", "未命名任務")
-                        owner = act.get("owner", "未指定")
-                        due = act.get("due_date", "TBD")
-                        formatted_actions.append(f"[{owner}] {task} (截止: {due})")
-                    else:
-                        formatted_actions.append(str(act))
-            obj["action_items"] = formatted_actions
-
-            obj.setdefault("discussion", {})
-            if not isinstance(obj["discussion"], dict):
-                obj["discussion"] = {}
-            obj["discussion"].setdefault("tracking", [])
-            obj["discussion"].setdefault("interesting", [])
-            obj["discussion"].setdefault("retrospective", [])
+            obj.setdefault("action_items", [])
+            obj.setdefault("strategic_insights", [])
 
             return obj
 
