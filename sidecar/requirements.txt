@@ -1,0 +1,24 @@
+fastapi
+uvicorn
+faster-whisper
+pyannote.audio
+llama-cpp-python
+python-multipart
+pydantic
+yt-dlp
+requests
+# 專業音訊降噪與處理
+noisereduce
+soundfile
+scipy
+# 繁體中文轉換
+opencc-python-reimplemented
+# 文件處理與提取
+pymupdf
+python-docx
+# 打包必要套件
+pyinstaller
+# Windows CUDA 穩定性加固
+nvidia-cublas-cu12
+nvidia-cudnn-cu12
+nvidia-cuda-runtime-cu12

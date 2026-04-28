@@ -1,0 +1,16 @@
+# VoxNote 開發進度備忘錄 (2026-04-14)
+
+## 當前進度
+1. AI 摘要：完成五段式專家報告 (基本資料/議程/決議/待辦/三類摘要)。
+2. 效能優化：實作合併校對與提取的高速流水線，減少 AI 呼叫開銷。
+3. 介面優化：設定頁面改為全深色、對稱、極簡佈局，高度壓縮垂直空間。
+4. 核心修復：media 特權協定與路徑編碼修復，播放功能已正常。
+
+## 下一步 (Resume 後執行)
+1. 協助使用者設定下載好的 DeepSeek-R1-7B 與 Llama-3.1-8B-v2 模型。
+2. 進行 8GB 顯存環境下的全流程壓力測試 (STT -> 校對 -> 摘要)。
+3. 觀察五段式報告的內容密度與視覺呈現是否需微調。
+
+## 下載連結備忘
+- Logic: https://huggingface.co/bartowski/DeepSeek-R1-Distill-Qwen-7B-GGUF/blob/main/DeepSeek-R1-Distill-Qwen-7B-Q6_K.gguf
+- Polish: https://huggingface.co/yentinglin/Llama-3.1-Taiwan-8B-Instruct-v2-GGUF/blob/main/Llama-3.1-Taiwan-8B-Instruct-v2-Q5_K_M.gguf

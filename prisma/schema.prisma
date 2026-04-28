@@ -1,0 +1,67 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Meeting {
+  id          String   @id @default(uuid())
+  title       String
+  date        DateTime @default(now())
+  duration    Int      @default(0)
+  audioPath   String   @map("audio_path")
+  status      String   @default("pending")
+  
+  speakers    Speaker[]
+  segments    TranscriptSegment[]
+  actionItems ActionItem[]
+  summary     Summary?
+}
+
+model Speaker {
+  id          String   @id @default(uuid())
+  meetingId   String   @map("meeting_id")
+  label       String
+  displayName String?  @map("display_name")
+  
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  segments    TranscriptSegment[]
+}
+
+model TranscriptSegment {
+  id          Int      @id @default(autoincrement())
+  meetingId   String   @map("meeting_id")
+  speakerId   String?  @map("speaker_id")
+  startTime   Float    @map("start_time")
+  endTime     Float    @map("end_time")
+  content     String
+  
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  speaker     Speaker? @relation(fields: [speakerId], references: [id], onDelete: SetNull)
+}
+
+model Summary {
+  meetingId   String   @id @map("meeting_id")
+  overview    String?
+  highlights  String?  // JSON string
+  decisions   String?  // JSON string
+  actionItems String?  @map("action_items") // JSON string (Legacy support)
+  mode        String?  // 分析模式: meeting or document
+  
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}
+
+model ActionItem {
+  id          String   @id @default(uuid())
+  meetingId   String   @map("meeting_id")
+  content     String
+  status      String   @default("pending") // pending, completed
+  priority    String   @default("medium")  // high, medium, low
+  dueDate     DateTime? @map("due_date")
+  createdAt   DateTime @default(now())
+  
+  meeting     Meeting  @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+}

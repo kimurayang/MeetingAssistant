@@ -1,0 +1,78 @@
+{
+  "name": "TRON-MeetingAI",
+  "version": "1.0.0",
+  "main": "out/main/index.js",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "prebuild": "prisma generate",
+    "build": "electron-vite build",
+    "preview": "electron-vite preview",
+    "dist": "npm run prebuild && electron-vite build && electron-builder"
+  },
+  "build": {
+    "appId": "com.tron-meeting-ai",
+    "productName": "TRON-MeetingAI",
+    "asar": true,
+    "asarUnpack": [
+      "node_modules/.prisma/**/*"
+    ],
+    "directories": {
+      "output": "dist/build"
+    },
+    "files": [
+      "out/**/*",
+      "package.json",
+      "prisma/schema.prisma",
+      {
+        "from": "node_modules/@prisma/client",
+        "to": "node_modules/@prisma/client",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "node_modules/.prisma",
+        "to": "node_modules/.prisma",
+        "filter": ["**/*"]
+      }
+    ],
+    "extraResources": [
+      {
+        "from": "sidecar/dist/VoxNoteSidecar",
+        "to": "sidecar"
+      },
+      {
+        "from": "prisma/template_meetings.db",
+        "to": "prisma/template_meetings.db"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "requestedExecutionLevel": "asInvoker"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^4.0.0",
+    "autoprefixer": "^10.4.27",
+    "electron": "^41.0.2",
+    "electron-builder": "^26.8.1",
+    "electron-vite": "^5.0.0",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^5.9.3",
+    "vite": "^7.0.0"
+  },
+  "dependencies": {
+    "@electron-toolkit/utils": "^4.0.0",
+    "@prisma/client": "^5.0.0",
+    "prisma": "^5.0.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  }
+}

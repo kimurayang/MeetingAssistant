@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+venv/
+.venv/
+
+# Build outputs
+out/
+dist/
+build/
+sidecar/build/
+sidecar/dist/
+*.spec
+*.exe
+
+# AI Models & Data (Large files)
+models/
+*.gguf
+*.db
+*.db-journal
+
+# Media files
+*.wav
+*.mp3
+*.mp4
+*.mov
+*.pdf
+*.docx
+
+# Environment & Logs
+.env
+*.log
+sidecar/worker.log
+sidecar/sidecar_runtime.log
+sidecar/result_*.json
+__pycache__/
+*.pyc
+
+# OS files
+.DS_Store
+Thumbs.db
