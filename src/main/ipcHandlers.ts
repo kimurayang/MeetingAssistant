@@ -327,6 +327,7 @@ export function setupIpcHandlers() {
 
   ipcMain.handle('export-meeting', async (_, { meetingId, type, title, segments, summary }: any) => {
     try {
+      const config = await getConfig();
       const now = new Date();
       const timestamp = now.getFullYear().toString() +
         (now.getMonth() + 1).toString().padStart(2, '0') +
@@ -337,9 +338,14 @@ export function setupIpcHandlers() {
       const fileSuffix = type.includes('analysis') ? '專家報告' : '逐字稿';
       const defaultFileName = `${timestamp}${fileSuffix}.pdf`;
 
+      // 🟢 [Fix] 讓匯出預設路徑與 Storage 路徑 (recordingsPath) 相同
+      const defaultExportDir = config.recordingsPath && existsSync(config.recordingsPath)
+        ? config.recordingsPath
+        : app.getPath('desktop');
+
       const { filePath } = await dialog.showSaveDialog({
         title: `匯出${fileSuffix}`,
-        defaultPath: join(app.getPath('desktop'), defaultFileName),
+        defaultPath: join(defaultExportDir, defaultFileName),
         filters: [{ name: 'PDF Files', extensions: ['pdf'] }]
       })
 
